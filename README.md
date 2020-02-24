@@ -10,5 +10,8 @@ Task : Predict the column “LICENSE STATUS”
 
  --- Please note that still a lot of classifiers like SVM,Logistic,XGBoost,Isolated tree... and so many algorithms
 are yet to be tested which will be updated here time to time   ---------------------------
+
+--Due to inavailabilty of adequate time, tasks are yet to be completed and updated time-to-time -- 
+
 # Predicting-business-license-status
 ML/Logistic/Classifier
