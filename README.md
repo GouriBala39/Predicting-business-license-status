@@ -7,5 +7,8 @@ REA (license revocation has been appealed)
 REV (license was revoked) 
 Task : Predict the column “LICENSE STATUS” 
 
+
+ --- Please note that still a lot of classifiers like SVM,Logistic,XGBoost,Isolated tree... and so many algorithms
+are yet to be tested which will be updated here time to time   ---------------------------
 # Predicting-business-license-status
 ML/Logistic/Classifier
