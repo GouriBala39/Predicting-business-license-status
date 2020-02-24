@@ -1,0 +1,315 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+### So why shift to python?
+### Well.. My R studio crashed trying to append changes made in the files
+
+### Anyway, let us now start progressing towards modelling
+
+
+# In[194]:
+
+
+### Importing the bread and butter of python
+### Note : SQLite3 was installed but I could not really use it because of my PC's configuration
+### However it is HIGHLY RECOMMENDED that you import your datasets into it for efficiency
+import pandas as pd
+import numpy as np
+import sqlite3
+import random
+
+
+# In[977]:
+
+
+conn = sqlite3.connect('test.db')
+print ("Opened database successfully");
+
+
+# In[76]:
+
+
+### Let us import the training file
+train = pd.read_csv(r"C:\Users\******\*****\df12.csv")
+train.loc[0,:]
+train = pd.DataFrame(data = train)
+
+
+# In[80]:
+
+
+### Re-arranging the columns of train
+cols = [0,1,2,3,4,5,6,7,8,9,10,11,12,14,15,13]
+traind = train.iloc[:,cols]
+
+
+# In[ ]:
+
+
+### As mentioned earlier, because of my PC's configuration,it was very difficult for me to synthesize the whole dataframe
+### Which is why I decided to take 1000 random samples and created a new training set
+############## ------- IGNORE THIS STEP IF ALREADY SYTHESIZED  -------- #############
+td = traind.sample(n = 1000)
+td.head()
+
+
+# In[ ]:
+
+
+### Now,in case of any machine learning algorithm, the concept is ,that the machine should 'learn' on its own
+### And we all the language it speaks in - 1's and 0's
+### So next step would be to convert this dataframe as a matrix
+### Imagine a Euclidean space, wherein AX = B 
+### A being our coefficient matrix(assigned as 1'and 0's)
+### X being the independent(preferred) unique variables affecting our target variable
+### B the final values obtained from the dataframe(target variable values)
+
+
+########----- So I want you to realize what we are actually doing
+###### Basically every value in the LICENSE.STATUS column was obtained so due to some combination of our chosen variables
+### present in the X 
+
+
+# In[ ]:
+
+
+### So let us first create the list of those unique variables(the factors of each column individually),and construct a 0 matrix
+k = [3,4,5,6,7,8,10,11,12,13,14] ### further listing down columns
+len(k)
+unique_list = []
+for i in k:
+    unique_list = unique_list  + traind.iloc[:,i].unique().tolist()
+len(unique_list)   ### 6570 unique factors in total!!! 
+#####################
+d = pd.DataFrame(np.zeros((td.shape[0],len(unique_list))))
+d.columns = unique_list
+d.head()
+
+
+# In[ ]:
+
+
+### let us further baptize the dataframe
+d1 = pd.DataFrame(d)
+d1 = d1.interpolate()
+d1.head()
+
+
+# In[ ]:
+
+
+#### Okay so let's move on
+#### Now what we will do is for every record in our training file,we will correspond each variable,each factor and cast a vote
+#### 1 : if the variable/factor is present in that record ; 0  : if not(basically leave it as it is)
+
+
+trial = []  ### first creating an empty list which would eventually store every variable value in a record as an individual list
+for i in range(0,td.shape[0]):
+    print(i)
+    for j in range(0,len(k)+1):
+        print(j)
+        if j < len(k):
+            trial.append(td.iloc[i,k[j]])
+    print(trial)
+    for p in range(0,len(trial)-1):  ### loop through the list to amend the changes
+        print("entered p-loop")
+        print(p)
+        print(trial[p])
+        print(d1.loc[i,trial[p]])
+        d1.loc[i,trial[p]] = 1
+        print(d1.loc[i,trial[p]])
+        print("end of p-loop for that iteration")
+    trial = [] ### resetting after every ith iteration
+    
+
+
+# In[ ]:
+
+
+###### Do observe the d1 now.
+##### It has succesfully voted itself for every value in a record as 1
+
+
+# In[ ]:
+
+
+####### You may skip this step if you want
+#### This is for concatenating the 2 dataframes :
+##            1. the original dataframe with columns as variables with datatype varied
+##            2. the new modified ML dataframe with 0's and 1's with columns as factors with data in binary format
+df = pd.concat([td.reset_index(drop=True),d1.reset_index(drop=True)], axis=1)
+df.shape[0]
+
+
+# In[81]:
+
+
+#### Let us first try Random Forest
+from sklearn.ensemble import RandomForestClassifier
+#from sklearn.datasets import make_classification
+
+
+# In[940]:
+
+
+#### Assigning X and y
+X = d1.iloc[:,0:len(d1.columns)]
+y = td['LICENSE.STATUS']
+
+
+# In[941]:
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+
+# In[986]:
+
+
+# Instantiate model with 100 decision trees
+rf = RandomForestClassifier(n_estimators = 100, random_state = 10)
+# Train the model on training data
+rf1 = rf.fit(X, y)
+print(rf1)
+
+
+# In[987]:
+
+
+prd=rf1.predict(X)
+
+
+# In[988]:
+
+
+len(prd)
+
+
+# In[989]:
+
+
+rf1.score(X_test,y_test)
+
+
+# In[990]:
+
+
+from sklearn.metrics import f1_score
+f1_score(y, prd, average='macro')
+
+
+# In[991]:
+
+
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+print(confusion_matrix(y,prd))
+print(classification_report(y,prd))
+print(accuracy_score(y, prd))
+
+
+# In[ ]:
+
+
+#### Now let us try with test dataset
+
+
+# In[599]:
+
+
+testdata = pd.read_csv(r"C:\Users\gouri\Desktop\pythontest.csv")
+testdata.head()
+
+
+# In[569]:
+
+
+unique_list = []
+for i in k[0:len(k)-1]:
+    unique_list = unique_list  + testdata.iloc[:,i].unique().tolist()
+len(unique_list)    
+
+
+# In[650]:
+
+
+### For converting testdata into binary matrix 
+testd = pd.DataFrame(np.zeros((testdata.shape[0],len(unique_list))))
+testd.columns = unique_list
+testd.head()
+
+
+# In[651]:
+
+
+#### Similarly 1000 random samples of test data
+td1 = testd.sample(n = 1000)
+td1.head()
+
+
+# In[652]:
+
+
+trial1 = []
+for i in range(0,testdata.shape[0]):
+    print(i)
+    for j in range(0,len(k)-1):
+        print(j)
+        if j < len(k):
+            trial1.append(testdata.iloc[i,k[j]])
+    print(trial1)
+    for p in range(0,len(trial1)):
+        print("entered p-loop")
+        print(p)
+        print(trial1[p])
+        print(td1.iloc[i, td1.columns.get_loc(trial1[p])])
+        td1.iloc[i, td1.columns.get_loc(trial1[p])] = 1
+        print(td1.iloc[i, td1.columns.get_loc(trial1[p])])
+        print("end of p-loop for that iteration")
+    trial1 = []
+    
+
+
+# In[ ]:
+
+
+#### Note how test data has fewer factors than train
+#### Some are new,some common
+#### So making  necessary changes...
+
+
+# In[ ]:
+
+
+common=set(d1.columns.tolist()).intersection(td1.columns.tolist())
+len(common)
+
+
+# In[ ]:
+
+
+### So let us consolidate the whole predictions to a csv
+
+
+# In[966]:
+
+
+final_df = pd.DataFrame(index=range(0,1000), columns=['ID','LICENSE.STATUS'])
+ids = finaltesttd['ID'].tolist()
+final_df['ID'] = ids
+predicted = prdtest.tolist()
+final_df['LICENSE.STATUS'] = predicted
+final_df
+
+
+# In[ ]:
+
+
+final_df['ID,LICENSE.STATUS'] = final_df['ID'].str.cat(df['LICENSE.STATUS'], sep =",") 
+print(final_df) 
+final_df.to_csv(r'C:\Users\*****\*****\final.csv', index=False)
+
